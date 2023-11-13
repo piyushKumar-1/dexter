@@ -1,8 +1,13 @@
 # Start from a Rust image
-FROM rust:1.56 as builder
+FROM rust:1.73-buster as builder
 
 RUN USER=root cargo new --bin dexter
 WORKDIR /dexter
+
+RUN apt-get update && apt-get upgrade -y
+RUN apt-get install libssl-dev
+
+RUN apt-get install -y -q build-essential curl
 
 RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl && chmod +x ./kubectl
 RUN mv ./kubectl /usr/local/bin/kubectl
@@ -26,4 +31,5 @@ COPY --from=builder /dexter/target/release/dexter .
 COPY --from=builder /usr/local/bin/kubectl /bin
 RUN chmod +x /bin/kubectl
 ENV RUST_BACKTRACE=full
+EXPOSE 8080
 CMD ["./dexter"]
