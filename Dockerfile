@@ -1,24 +1,28 @@
 # Start from a Rust image
-FROM rust:1.73-buster as builder
 
-RUN USER=root cargo new --bin dexter
+FROM ubuntu:16.04 as builder
+
+# Update default packages
 WORKDIR /dexter
+RUN apt-get update
 
-RUN apt-get update && apt-get upgrade -y
-RUN apt-get install libssl-dev
+# Get Ubuntu packages
+RUN apt-get install -y \
+    build-essential \
+    curl
 
-RUN apt-get install -y -q build-essential curl
+# Update new packages
+RUN apt-get update
+
+# Get Rust
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
 
 RUN curl -LO https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl && chmod +x ./kubectl
 RUN mv ./kubectl /usr/local/bin/kubectl
 
-# Create a new empty shell project
-# Copy manifests
-COPY ./Cargo.toml ./Cargo.toml
-
 # Build only the dependencies to cache them
-RUN cargo build --release
-RUN rm src/*.rs
+COPY ./Cargo.toml ./Cargo.toml
 
 # Copy the source and build the application
 COPY ./src ./src
